@@ -23,6 +23,7 @@
 
 using Gtk;
 using Widgets;
+using Gdk;
 
 [DBus (name = "com.deepin.terminal")]
 interface TerminalBus : Object {
@@ -49,6 +50,7 @@ namespace Widgets {
         public WindowButton unmax_button;
         public WorkspaceManager workspace_manager;
         public int logo_width = 48;
+        public int menu_button_width = Constant.WINDOW_BUTTON_WIDHT;
         public int titlebar_right_cache_width = 10;
         
         public signal void close_window();
@@ -99,11 +101,13 @@ namespace Widgets {
             window_button_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             window_close_button_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             
-            menu_button = new WindowButton("window_menu", true, Constant.WINDOW_BUTTON_WIDHT, Constant.TITLEBAR_HEIGHT);
-            min_button = new WindowButton("window_min", true, Constant.WINDOW_BUTTON_WIDHT, Constant.TITLEBAR_HEIGHT);
-            max_button = new WindowButton("window_max", true, Constant.WINDOW_BUTTON_WIDHT, Constant.TITLEBAR_HEIGHT);
-            unmax_button = new WindowButton("window_unmax", true, Constant.WINDOW_BUTTON_WIDHT, Constant.TITLEBAR_HEIGHT);
-            close_button = new WindowButton("window_close", true, Constant.WINDOW_BUTTON_WIDHT + Constant.CLOSE_BUTTON_MARGIN_RIGHT, Constant.TITLEBAR_HEIGHT);
+            if(Utils.is_decoration_enabled()) menu_button_width = 0;
+
+            menu_button = new WindowButton("window_menu", true, menu_button_width, Constant.TITLEBAR_HEIGHT);
+            min_button = new WindowButton("window_min", true, menu_button_width, Constant.TITLEBAR_HEIGHT);
+            max_button = new WindowButton("window_max", true, menu_button_width, Constant.TITLEBAR_HEIGHT);
+            unmax_button = new WindowButton("window_unmax", true, menu_button_width, Constant.TITLEBAR_HEIGHT);
+            close_button = new WindowButton("window_close", true, menu_button_width + Constant.CLOSE_BUTTON_MARGIN_RIGHT, Constant.TITLEBAR_HEIGHT);
             quit_fullscreen_button = new WindowButton("quit_fullscreen", true, Constant.WINDOW_BUTTON_WIDHT + Constant.CLOSE_BUTTON_MARGIN_RIGHT, Constant.TITLEBAR_HEIGHT);
             
             close_button.clicked.connect((w) => {
@@ -115,19 +119,29 @@ namespace Widgets {
             
             menu_button.clicked.connect((b) => {
                     focus_widget = ((Gtk.Window) menu_button.get_toplevel()).get_focus();
-                    
-                    var menu_content = new List<Menu.MenuItem>();
-                    menu_content.append(new Menu.MenuItem("new_window", _("New window")));
-                    menu_content.append(new Menu.MenuItem("switch_theme", _("Switch theme")));
-                    menu_content.append(new Menu.MenuItem("custom_commands", _("Custom commands")));
-                    menu_content.append(new Menu.MenuItem("remote_manage", _("Remote management")));
-                    menu_content.append(new Menu.MenuItem("", ""));
-                    menu_content.append(new Menu.MenuItem("preference", _("Settings")));
-                    if (Utils.is_command_exist("dman")) {
-                        menu_content.append(new Menu.MenuItem("help", _("Help")));
+
+                    Gdk.Screen screen = Gdk.Screen.get_default();
+                    CssProvider provider = new Gtk.CssProvider();
+                    try {
+                        provider.load_from_data(Utils.get_menu_css());
+                    } catch (GLib.Error e) {
+                        warning("Something bad happened with CSS load %s", e.message);
                     }
-                    menu_content.append(new Menu.MenuItem("about", _("About")));
-                    menu_content.append(new Menu.MenuItem("exit", _("Exit")));
+                    Gtk.StyleContext.add_provider_for_screen(screen,provider,Gtk.STYLE_PROVIDER_PRIORITY_USER);
+
+                    Gtk.Menu menu_content = new Gtk.Menu();
+                    menu_content.get_style_context().add_class("gtk_menu");
+                    menu_content.append(get_menu_item("new_window", _("New window")));
+                    menu_content.append(get_menu_item("switch_theme", _("Switch theme")));
+                    menu_content.append(get_menu_item("custom_commands", _("Custom commands")));
+                    menu_content.append(get_menu_item("remote_manage", _("Remote management")));
+                    menu_content.append(get_menu_item("", ""));
+                    menu_content.append(get_menu_item("preference", _("Settings")));
+                    if (Utils.is_command_exist("dman")) {
+                        menu_content.append(get_menu_item("help", _("Help")));
+                    }
+                    menu_content.append(get_menu_item("about", _("About")));
+                    menu_content.append(get_menu_item("exit", _("Exit")));
                     
                     int menu_x, menu_y;
                     menu_button.translate_coordinates(menu_button.get_toplevel(), 0, 0, out menu_x, out menu_y);
@@ -136,9 +150,12 @@ namespace Widgets {
                     int window_x, window_y;
                     menu_button.get_toplevel().get_window().get_origin(out window_x, out window_y);
                     
-                    menu = new Menu.Menu(window_x + menu_x, window_y + menu_y + menu_rect.height, menu_content);
-                    menu.click_item.connect(handle_menu_item_click);
-                    menu.destroy.connect(handle_menu_destroy);
+                    menu_content.show_all();
+                   
+                    menu_rect.x -= menu_button_width;
+                    menu_rect.y += menu_button_width;
+                    menu_content.popup_at_rect (get_toplevel().get_window(), menu_rect, Gravity.NORTH_EAST, Gravity.NORTH_EAST, null);
+                    menu_content.destroy.connect(handle_menu_destroy);
                 });
             
             max_toggle_box = new Box(Gtk.Orientation.HORIZONTAL, 0);
@@ -159,7 +176,7 @@ namespace Widgets {
 			logo_box.set_size_request(logo_width, Constant.TITLEBAR_HEIGHT);
 			Gtk.Image logo_image = new Gtk.Image.from_file(Utils.get_image_path("title_icon.svg"));
 			logo_box.pack_start(logo_image, true, true, 0);
-			box.pack_start(logo_box, false, false, 0);
+			//box.pack_start(logo_box, false, false, 0);
 			
             max_toggle_box.add(max_button);
 
@@ -207,6 +224,22 @@ namespace Widgets {
 
                     return true;
                 });
+        }
+
+        public Gtk.MenuItem get_menu_item(string item_id, string item_text) {
+            var item = new Gtk.MenuItem.with_label(item_text);
+            if(item_text == "") {
+                item = new Gtk.SeparatorMenuItem();
+            }
+            if (!((Widgets.ConfigWindow) get_toplevel()).is_light_theme()) 
+                item.get_style_context().add_class("gtk_menu_item");
+            else 
+                item.get_style_context().add_class("gtk_menu_item_light");
+
+            item.activate.connect(() => { 
+                handle_menu_item_click(item_id); 
+                });
+            return item;
         }
         
         public void show_window_button() {

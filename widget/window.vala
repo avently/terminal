@@ -36,10 +36,11 @@ namespace Widgets {
         public Gtk.Box spacing_box;
         public bool draw_tabbar_line = true;
         public double window_default_scale = 0.618;
-        public int window_frame_margin_bottom = 60;
-        public int window_frame_margin_end = 50;
-        public int window_frame_margin_start = 50;
-        public int window_frame_margin_top = 50;
+        public int window_frame_margin_bottom = 0;
+        public int window_frame_margin_end = 0;
+        public int window_frame_margin_start = 0;
+        public int window_frame_margin_top = 0;
+        public bool reverse_tabbar_position = false;
         public int window_fullscreen_monitor_height = Constant.TITLEBAR_HEIGHT * 2;
         public int window_fullscreen_monitor_timeout = 150;
         public int window_fullscreen_response_height = 5;
@@ -51,6 +52,7 @@ namespace Widgets {
         public int window_width;
 
         public Window(string? window_mode) {
+            reverse_tabbar_position = Utils.is_decoration_enabled();
             transparent_window();
             init_window();
 
@@ -130,7 +132,10 @@ namespace Widgets {
         }
 
         public void init_window() {
-            set_decorated(false);
+            if(Utils.is_decoration_enabled()) 
+                set_decorated(true);
+            else 
+                set_decorated(false);
 
             window_frame_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
             window_widget_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
@@ -394,7 +399,7 @@ namespace Widgets {
         public override void update_frame() {
             update_style();
             
-            if (!screen_monitor.is_composited() || window_is_fullscreen() || window_is_max()) {
+            if (Utils.is_decoration_enabled() || window_is_fullscreen() || window_is_max()) {
                 window_widget_box.margin_top = 0;
                 window_widget_box.margin_bottom = 0;
                 window_widget_box.margin_start = 0;
@@ -486,6 +491,7 @@ namespace Widgets {
                 int x = window_frame_box.margin_start;
                 int y = window_frame_box.margin_top;
                 int width = window_frame_rect.width;
+                int height = window_frame_rect.height;
                 Gdk.RGBA frame_color = Gdk.RGBA();
 
                 bool is_light_theme = is_light_theme();
@@ -546,15 +552,18 @@ namespace Widgets {
                         // Left.
                         Draw.draw_rectangle(cr, x + 1, y + 2, 1, Constant.TITLEBAR_HEIGHT);
                         // Right.
-                        Draw.draw_rectangle(cr, x + width - 2, y + 2, 1, Constant.TITLEBAR_HEIGHT);
-
-						int titlebar_y = y;
+                        Draw.draw_rectangle(cr, x + width - 2, y + 2, 1, Constant.TITLEBAR_HEIGHT);                        
+						
+                        int titlebar_y = y;
 						if (get_scale_factor() > 1) {
 							titlebar_y += 1;
 						}
-						
+
                         draw_titlebar_underline(cr, x + 1, titlebar_y, width - 2, 1);
-                        draw_active_tab_underline(cr, x + active_tab_underline_x - window_frame_box.margin_start, titlebar_y + Constant.TITLEBAR_HEIGHT);
+                        if(reverse_tabbar_position) 
+                            draw_active_tab_underline(cr, x + active_tab_underline_x, titlebar_y + height - Constant.TITLEBAR_HEIGHT);
+                        else 
+                            draw_active_tab_underline(cr, x + active_tab_underline_x - window_frame_box.margin_start, titlebar_y + Constant.TITLEBAR_HEIGHT);
                     }
                 } catch (Error e) {
                     print("Window draw_window_above: %s\n", e.message);
@@ -619,7 +628,11 @@ namespace Widgets {
         public void show_window(TerminalApp app, WorkspaceManager workspace_manager, Tabbar tabbar, bool has_start=false) {
             Appbar appbar = new Appbar(app, this, tabbar, workspace_manager, has_start);
 
-            appbar.set_valign(Gtk.Align.START);
+            if(reverse_tabbar_position) 
+                appbar.set_valign(Gtk.Align.END);
+            else
+                appbar.set_valign(Gtk.Align.START);
+            
             appbar.close_window.connect((w) => {
                     quit();
                 });
@@ -642,9 +655,15 @@ namespace Widgets {
 
             var overlay = new Gtk.Overlay();
             top_box.pack_start(fullscreen_box, false, false, 0);
-            box.pack_start(top_box, false, false, 0);
-            box.pack_start(workspace_manager, true, true, 0);
-
+            if(reverse_tabbar_position) {
+                box.pack_start(workspace_manager, true, true, 0);
+                box.pack_start(top_box, false, false, 0);
+            }
+            else {
+                box.pack_start(top_box, false, false, 0);
+                box.pack_start(workspace_manager, true, true, 0);
+            }
+            
             overlay.add(box);
             overlay.add_overlay(appbar);
 
@@ -665,6 +684,8 @@ namespace Widgets {
         }
 
         public override Gdk.CursorType? get_cursor_type(double x, double y) {
+            if(Utils.is_decoration_enabled()) 
+                return null;
             int window_x, window_y;
             get_window().get_origin(out window_x, out window_y);
 
@@ -672,12 +693,12 @@ namespace Widgets {
             get_size(out width, out height);
 
             var left_side_start = window_x + window_frame_margin_start - Constant.RESPONSE_RADIUS;
-            var left_side_end = window_x + window_frame_margin_start;
-            var right_side_start = window_x + width - window_frame_margin_end;
+            var left_side_end = window_x + window_frame_margin_start + 10;
+            var right_side_start = window_x + width - window_frame_margin_end - 10;
             var right_side_end = window_x + width - window_frame_margin_end + Constant.RESPONSE_RADIUS;
             var top_side_start = window_y + window_frame_margin_top - Constant.RESPONSE_RADIUS;;
-            var top_side_end = window_y + window_frame_margin_top;
-            var bottom_side_start = window_y + height - window_frame_margin_bottom;
+            var top_side_end = window_y + window_frame_margin_top+10;
+            var bottom_side_start = window_y + height - window_frame_margin_bottom - 30;
             var bottom_side_end = window_y + height - window_frame_margin_bottom + Constant.RESPONSE_RADIUS;
 
             if (x > left_side_start && x < left_side_end) {

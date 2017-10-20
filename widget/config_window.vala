@@ -658,6 +658,7 @@ namespace Widgets {
         }
 
         public void draw_titlebar_underline(Cairo.Context cr, int x, int y, int width, int offset) {
+			return;
             // Draw line below at titlebar.
             cr.save();
             if (is_light_theme()) {

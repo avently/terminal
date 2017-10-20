@@ -30,6 +30,7 @@ using Cairo;
 extern char* project_path();
 extern string font_match(string family);
 extern string[] list_mono_or_dot_fonts(out int num);
+private int is_decoration_enabled_value = 2;
 
 namespace Utils {
     [DBus (name = "com.deepin.Manual.Open")]
@@ -81,6 +82,18 @@ namespace Utils {
         return b > 0.35 && s < 0.7;
     }
 
+    public bool is_decoration_enabled() {
+        if(is_decoration_enabled_value != 2) return (bool) is_decoration_enabled_value;
+        var output = "";
+        try {
+            Process.spawn_command_line_sync (@"pidof i3 xmonad wmii wmfs wingo subtle sway stumpwm spectrwm snapwm ratpoison qtile notion herbstluftwm frankenwm dwm bspwm awesome alopex", out output);
+        } catch (GLib.SpawnError e) {
+            warning("Something bad happened with pidof command %s", e.message);
+        }
+        is_decoration_enabled_value =  (int) (output != "");
+        return (bool) is_decoration_enabled_value;
+    }
+
     public double get_color_brightness(string color_string) {
         Gdk.RGBA color = Gdk.RGBA();
         color.parse(color_string);
@@ -103,6 +116,51 @@ namespace Utils {
         b = max_v;
 
         return b;
+    }
+
+    public string get_menu_css() {
+        Config.Config config = new Config.Config();
+        string background_color = null;
+        string foreground_color = null;
+        try {
+            background_color = config.config_file.get_string("theme", "background");
+            foreground_color = config.config_file.get_string("theme", "foreground");
+        } catch (GLib.KeyFileError e) {
+            print("Can't read config file: %s\n", e.message);
+            background_color = "#ffffff";
+            foreground_color = "#000000";
+        }
+        
+        return @"
+                    .window-frame {
+                        box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22); 
+                    }
+                    .window-frame.csd.popup {
+                        box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.2);
+                    }
+                    .gtk_menu{
+                        background: $background_color;
+                        border: none;
+                        border-top: 0px solid rgba(0, 0, 0, 0.4); 
+                    }
+                    .gtk_menu_item{
+                        background: $background_color;
+                    }
+                    .gtk_menu_item:hover{
+                        background-color: $foreground_color;
+                        color:black;
+                        transition: color 10ms linear;
+                    }
+                    .gtk_menu_item_light{
+                        color:black;
+                        background: $background_color;
+                    }
+                    .gtk_menu_item_light:hover{
+                        background-color: $foreground_color;
+                        color:white;
+                        transition: color 10ms linear;
+                    }
+                    ";
     }
 
     public void touch_dir(string dir) {
@@ -282,11 +340,15 @@ namespace Utils {
     }
 
     public string get_theme_path(string theme_name) {
-#if TEST_BUILD
-        return GLib.Path.build_path(GLib.Path.DIR_SEPARATOR_S, (string) project_path(), "theme", theme_name);
-#else
-        return GLib.Path.build_path(GLib.Path.DIR_SEPARATOR_S, (string) project_path(), "share", "deepin-terminal", "theme", theme_name);
-#endif
+        var theme_path = GLib.Path.build_path(Path.DIR_SEPARATOR_S, GLib.Path.get_dirname((string) project_path()), "theme", theme_name);
+        var dir_file = GLib.File.new_for_path(theme_path);
+        if (!dir_file.query_exists())
+            theme_path = get_additional_theme_path(theme_name);
+        return theme_path;
+    }
+
+    public string get_additional_theme_path(string theme_name) {
+        return GLib.Path.build_path(Path.DIR_SEPARATOR_S, GLib.Path.get_dirname((string) get_additional_theme_dir()), "theme", theme_name);
     }
 
     public string get_theme_dir() {
@@ -295,6 +357,10 @@ namespace Utils {
 #else
         return GLib.Path.build_path(GLib.Path.DIR_SEPARATOR_S, (string) project_path(), "share", "deepin-terminal", "theme");
 #endif
+    }
+
+    public string get_additional_theme_dir() {
+        return GLib.Path.build_path(Path.DIR_SEPARATOR_S, GLib.Path.get_dirname((string) get_config_dir()), "deepin-terminal", "theme");
     }
 
     public string get_root_path(string file_path) {

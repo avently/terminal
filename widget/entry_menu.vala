@@ -26,7 +26,6 @@ using Utils;
 
 namespace Widgets {
     public class EntryMenu : Object {
-        public Menu.Menu menu;
         public bool config_theme_is_light;
         
         public EntryMenu() {
@@ -107,7 +106,7 @@ namespace Widgets {
         }
             
         public void handle_menu_destroy() {
-            menu = null;
+            // Maybe once it will be usefull
         }
     }
 }

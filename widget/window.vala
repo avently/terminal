@@ -40,7 +40,7 @@ namespace Widgets {
         public int window_frame_margin_end = 0;
         public int window_frame_margin_start = 0;
         public int window_frame_margin_top = 0;
-        public bool reverse_tabbar_position = false;
+        public bool tabbar_at_the_bottom = false;
         public int window_fullscreen_monitor_height = Constant.TITLEBAR_HEIGHT * 2;
         public int window_fullscreen_monitor_timeout = 150;
         public int window_fullscreen_response_height = 5;
@@ -52,13 +52,16 @@ namespace Widgets {
         public int window_width;
 
         public Window(string? window_mode) {
-            reverse_tabbar_position = Utils.is_decoration_enabled();
+            tabbar_at_the_bottom = !Utils.is_decoration_enabled() ? false : config.config_file.get_boolean("advanced", "tabbar_at_the_bottom");
             transparent_window();
             init_window();
 
             int monitor = config.get_terminal_monitor();
             Gdk.Rectangle rect;
             screen.get_monitor_geometry(monitor, out rect);
+
+            if(tabbar_at_the_bottom)
+                window_fullscreen_monitor_height = rect.height - window_fullscreen_monitor_height;
 
             Gdk.Geometry geo = Gdk.Geometry();
             geo.min_width = rect.width / 3;
@@ -560,7 +563,7 @@ namespace Widgets {
 						}
 
                         draw_titlebar_underline(cr, x + 1, titlebar_y, width - 2, 1);
-                        if(reverse_tabbar_position) 
+                        if(tabbar_at_the_bottom) 
                             draw_active_tab_underline(cr, x + active_tab_underline_x, titlebar_y + height - Constant.TITLEBAR_HEIGHT);
                         else 
                             draw_active_tab_underline(cr, x + active_tab_underline_x - window_frame_box.margin_start, titlebar_y + Constant.TITLEBAR_HEIGHT);
@@ -599,17 +602,20 @@ namespace Widgets {
 
             motion_notify_event.connect((w, e) => {
                     if (window_is_fullscreen()) {
-                        if (e.y_root < window_fullscreen_monitor_height) {
+                        var receiveEvents = tabbar_at_the_bottom? e.y_root > window_fullscreen_monitor_height : e.y_root < window_fullscreen_monitor_height;
+                        if (receiveEvents) {
                             GLib.Timeout.add(window_fullscreen_monitor_timeout, () => {
                                     int pointer_x, pointer_y;
                                     Utils.get_pointer_position(out pointer_x, out pointer_y);
 
-                                    if (pointer_y < window_fullscreen_response_height) {
+                                    var showAll = tabbar_at_the_bottom? pointer_y > window_fullscreen_monitor_height + Constant.TITLEBAR_HEIGHT : pointer_y < window_fullscreen_response_height;
+                                    var hideAll = tabbar_at_the_bottom? pointer_y < window_fullscreen_monitor_height + Constant.TITLEBAR_HEIGHT : pointer_y > Constant.TITLEBAR_HEIGHT;
+                                    if (showAll) {
                                         appbar.show_all();
                                         draw_tabbar_line = true;
 
                                         redraw_window();
-                                    } else if (pointer_y > Constant.TITLEBAR_HEIGHT) {
+                                    } else if (hideAll) {
                                         appbar.hide();
                                         draw_tabbar_line = false;
 
@@ -628,7 +634,7 @@ namespace Widgets {
         public void show_window(TerminalApp app, WorkspaceManager workspace_manager, Tabbar tabbar, bool has_start=false) {
             Appbar appbar = new Appbar(app, this, tabbar, workspace_manager, has_start);
 
-            if(reverse_tabbar_position) 
+            if(tabbar_at_the_bottom) 
                 appbar.set_valign(Gtk.Align.END);
             else
                 appbar.set_valign(Gtk.Align.START);
@@ -655,7 +661,7 @@ namespace Widgets {
 
             var overlay = new Gtk.Overlay();
             top_box.pack_start(fullscreen_box, false, false, 0);
-            if(reverse_tabbar_position) {
+            if(tabbar_at_the_bottom) {
                 box.pack_start(workspace_manager, true, true, 0);
                 box.pack_start(top_box, false, false, 0);
             }

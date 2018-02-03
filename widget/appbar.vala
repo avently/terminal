@@ -38,7 +38,6 @@ namespace Widgets {
         public Box window_button_box;
         public Box window_close_button_box;
         public Gtk.Widget? focus_widget;
-        public Menu.Menu menu;
         public Tabbar tabbar;
         public Widgets.Window window;
         public Widgets.WindowEventArea event_area;
@@ -137,9 +136,6 @@ namespace Widgets {
                     menu_content.append(get_menu_item("remote_manage", _("Remote management")));
                     menu_content.append(get_menu_item("", ""));
                     menu_content.append(get_menu_item("preference", _("Settings")));
-                    if (Utils.is_command_exist("dman")) {
-                        menu_content.append(get_menu_item("help", _("Help")));
-                    }
                     menu_content.append(get_menu_item("about", _("About")));
                     menu_content.append(get_menu_item("exit", _("Exit")));
                     
@@ -188,7 +184,6 @@ namespace Widgets {
             box.pack_start(window_close_button_box, false, false, 0);
             
             show_window_button();
-            
             event_area = new Widgets.WindowEventArea(this);
             // Don't override window button area.
             event_area.margin_end = Constant.CLOSE_BUTTON_WIDTH * 4;
@@ -279,9 +274,6 @@ namespace Widgets {
                 case "switch_theme":
                     workspace_manager.focus_workspace.show_theme_panel(workspace_manager.focus_workspace);
                     break;
-				case "help":
-                    Utils.show_manual();
-					break;
 			    case "about":
                     var dialog = new AboutDialog(focus_widget);
                     dialog.transient_for_window((Widgets.ConfigWindow) this.get_toplevel());
@@ -298,8 +290,6 @@ namespace Widgets {
 		}        
         
 		public void handle_menu_destroy() {
-			menu = null;
-            
             if (focus_widget != null) {
                 focus_widget.grab_focus();
             }

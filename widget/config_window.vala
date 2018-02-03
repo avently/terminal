@@ -440,12 +440,6 @@ namespace Widgets {
                     "%s + 9".printf(new_theme_terminal_key)
                 };
 
-                if (keyname == "F1") {
-                    Utils.show_manual();
-					
-					return true;
-				}
-
                 var search_key = config.config_file.get_string("shortcut", "search");
                 if (search_key != "" && keyname == search_key) {
                     Term focus_term = workspace_manager.focus_workspace.get_focus_term(workspace_manager.focus_workspace);
@@ -510,6 +504,30 @@ namespace Widgets {
                 if (select_right_window_key != "" && keyname == select_right_window_key) {
                     workspace_manager.focus_workspace.remove_all_panels();
                     workspace_manager.focus_workspace.select_right_window();
+                    return true;
+                }
+
+                var resize_workspace_left_key = config.config_file.get_string("shortcut", "resize_workspace_left");
+                if (resize_workspace_left_key != "" && keyname == resize_workspace_left_key) {
+                    workspace_manager.focus_workspace.resize_workspace_left();
+                    return true;
+                }
+
+                var resize_workspace_right_key = config.config_file.get_string("shortcut", "resize_workspace_right");
+                if (resize_workspace_right_key != "" && keyname == resize_workspace_right_key) {
+                    workspace_manager.focus_workspace.resize_workspace_right();
+                    return true;
+                }
+
+                var resize_workspace_up_key = config.config_file.get_string("shortcut", "resize_workspace_up");
+                if (resize_workspace_up_key != "" && keyname == resize_workspace_up_key) {
+                    workspace_manager.focus_workspace.resize_workspace_up();
+                    return true;
+                }
+
+                var resize_workspace_down_key = config.config_file.get_string("shortcut", "resize_workspace_down");
+                if (resize_workspace_down_key != "" && keyname == resize_workspace_down_key) {
+                    workspace_manager.focus_workspace.resize_workspace_down();
                     return true;
                 }
 

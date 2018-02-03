@@ -23,7 +23,6 @@
 
 using Gee;
 using Gtk;
-using Menu;
 using Utils;
 using Vte;
 using Widgets;
@@ -43,7 +42,6 @@ namespace Widgets {
         public Gdk.RGBA background_color = Gdk.RGBA();
         public Gdk.RGBA foreground_color = Gdk.RGBA();
         public Gtk.Scrollbar scrollbar;
-        public Menu.Menu menu;
         public Terminal term;
         public WorkspaceManager workspace_manager;
         public bool child_has_exit = false;
@@ -389,7 +387,7 @@ namespace Widgets {
             if (current_dir != "") {
 				var dir_file = GLib.File.new_for_path(current_dir);
 				if (dir_file.query_exists()) {
-					menu_content.append(new Menu.MenuItem("open_in_filemanager", _("Open in file manager")));
+					menu_content.append(get_menu_item("open_in_filemanager", _("Open in file manager")));
 				}
 				
 				display_first_spliter = true;
@@ -421,19 +419,23 @@ namespace Widgets {
             menu_content.append(get_menu_item("find", _("Find")));
             menu_content.append(get_menu_item("", ""));
             if (term.get_has_selection()) {
-                Menu.MenuItem online_search = get_menu_item("search", "Search");
+                Gtk.Menu online_search = new Gtk.Menu();
+                online_search.get_style_context().add_class("gtk_menu");
+                
+                Gtk.MenuItem online_search_item = get_menu_item("search", "Search");
+                online_search_item.set_submenu(online_search);
 
-                online_search.add_submenu_item(get_menu_item("google", "Google"));
-                online_search.add_submenu_item(get_menu_item("bing", "Bing"));
+                online_search.append(get_menu_item("google", "Google"));
+                online_search.append(get_menu_item("bing", "Bing"));
 
                 string? lang = Environment.get_variable("LANG");
                 if (lang != null && lang == "zh_CN.UTF-8") {
-                    online_search.add_submenu_item(get_menu_item("baidu", "Baidu"));
+                    online_search.append(get_menu_item("baidu", "Baidu"));
                 }
 
-                online_search.add_submenu_item(get_menu_item("github", "Github"));
-                online_search.add_submenu_item(get_menu_item("stackoverflow", "Stack Overflow"));
-                online_search.add_submenu_item(get_menu_item("duckduckgo", "DuckDuckGo"));
+                online_search.append(get_menu_item("github", "Github"));
+                online_search.append(get_menu_item("stackoverflow", "Stack Overflow"));
+                online_search.append(get_menu_item("duckduckgo", "DuckDuckGo"));
 
                 var file = File.new_for_path(search_engine_config_file_path);
                 if (file.query_exists()) {
@@ -445,7 +447,7 @@ namespace Widgets {
                             string search_engine_api = search_engine_config_file.get_value(option, "api");
 
                             if (search_engine_name != "" && search_engine_api != "") {
-                                online_search.add_submenu_item(get_menu_item(option, search_engine_name));
+                                online_search.append(get_menu_item(option, search_engine_name));
                             }
                         }
                     } catch (Error e) {
@@ -455,7 +457,7 @@ namespace Widgets {
                     }
                 }
 
-                menu_content.append(online_search);
+                menu_content.append(online_search_item);
             }
             menu_content.append(get_menu_item("", ""));
             menu_content.append(get_menu_item("switch_theme", _("Switch theme")));
@@ -750,7 +752,7 @@ namespace Widgets {
         }
 
         public void handle_menu_destroy() {
-            menu = null;
+            // Maybe once it will be usefull
         }
 
         public void focus_term() {

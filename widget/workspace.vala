@@ -53,6 +53,13 @@ namespace Widgets {
         public int index;
         public int show_slider_interval = 500;
         public int show_slider_start_x;
+        private enum WorkspaceResizeKey {
+            LEFT,
+            RIGHT,
+            UP,
+            DOWN
+        }
+        
         public uint? highlight_frame_timeout_source_id = null;
 
         public signal void change_title(int index, string dir);
@@ -404,6 +411,49 @@ namespace Widgets {
 
             highlight_select_window();
         }
+
+        private void resize_workspace(Term term, WorkspaceResizeKey key) {
+            Paned paned = (Paned)term.get_parent();
+
+            // In some situations we need to resize only parent widget of paned widget
+            if(
+                ((key == WorkspaceResizeKey.LEFT || key == WorkspaceResizeKey.RIGHT) && paned.get_orientation() == Gtk.Orientation.VERTICAL) 
+                ||
+                ((key == WorkspaceResizeKey.UP || key == WorkspaceResizeKey.DOWN) && paned.get_orientation() == Gtk.Orientation.HORIZONTAL)
+                ) {
+                    
+                if(!paned.get_parent().get_type().is_a(typeof(Paned)))
+                    return;
+
+                paned = (Paned)paned.get_parent();
+            }
+
+            int value = 0;
+            if(key == WorkspaceResizeKey.LEFT || key == WorkspaceResizeKey.UP)
+                value = -20;
+            else //key == WorkspaceResizeKey.RIGHT || key == WorkspaceResizeKey.DOWN
+                value = 20;
+
+            int pos = paned.get_position() + value;
+            paned.set_position(pos);
+        }
+
+        public void resize_workspace_left() {
+            resize_workspace (get_focus_term(this), WorkspaceResizeKey.LEFT);
+        }
+
+        public void resize_workspace_right() {
+            resize_workspace (get_focus_term(this), WorkspaceResizeKey.RIGHT);
+        }
+
+        public void resize_workspace_up() {
+            resize_workspace (get_focus_term(this), WorkspaceResizeKey.UP);
+        }
+
+        public void resize_workspace_down() {
+            resize_workspace (get_focus_term(this), WorkspaceResizeKey.DOWN);
+        }
+        
 
         public void highlight_select_window() {
             try {

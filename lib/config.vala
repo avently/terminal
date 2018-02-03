@@ -95,17 +95,23 @@ namespace Config {
                 config_file.set_string("shortcut", "jump_to_next_command", "Shift + Down");
                 config_file.set_string("shortcut", "jump_to_previous_command", "Shift + Up");
 
-                config_file.set_string("shortcut", "new_workspace", "Ctrl + Shift + t");
+                config_file.set_string("shortcut", "new_workspace", "Ctrl + t");
                 config_file.set_string("shortcut", "close_workspace", "Ctrl + Shift + w");
                 config_file.set_string("shortcut", "next_workspace", "Ctrl + Tab");
                 config_file.set_string("shortcut", "previous_workspace", "Ctrl + Shift + Tab");
-                config_file.set_string("shortcut", "vertical_split", "Ctrl + Shift + j");
-                config_file.set_string("shortcut", "horizontal_split", "Ctrl + Shift + h");
-                config_file.set_string("shortcut", "select_upper_window", "Alt + k");
-                config_file.set_string("shortcut", "select_lower_window", "Alt + j");
-                config_file.set_string("shortcut", "select_left_window", "Alt + h");
-                config_file.set_string("shortcut", "select_right_window", "Alt + l");
-                config_file.set_string("shortcut", "close_window", "Ctrl + Alt + q");
+                config_file.set_string("shortcut", "vertical_split", "Alt + j");
+                config_file.set_string("shortcut", "horizontal_split", "Alt + h");
+                config_file.set_string("shortcut", "select_upper_window", "Alt + Up");
+                config_file.set_string("shortcut", "select_lower_window", "Alt + Down");
+                config_file.set_string("shortcut", "select_left_window", "Alt + Left");
+                config_file.set_string("shortcut", "select_right_window", "Alt + Right");
+
+                config_file.set_string("shortcut", "resize_workspace_up", "Ctrl + Alt + Up");
+                config_file.set_string("shortcut", "resize_workspace_down", "Ctrl + Alt + Down");
+                config_file.set_string("shortcut", "resize_workspace_left", "Ctrl + Alt + Left");
+                config_file.set_string("shortcut", "resize_workspace_right", "Ctrl + Alt + Right");
+
+                config_file.set_string("shortcut", "close_window", "Alt + q");
                 config_file.set_string("shortcut", "close_other_windows", "Ctrl + Shift + q");
 
                 config_file.set_string("shortcut", "rename_title", "F2");
@@ -136,6 +142,7 @@ namespace Config {
                 config_file.set_boolean("advanced", "hide_quakewindow_when_active", true);
                 config_file.set_boolean("advanced", "print_notify_after_script_finish", true);
                 config_file.set_boolean("advanced", "run_as_login_shell", false);
+                config_file.set_boolean("advanced", "tabbar_at_the_bottom", true);                
                 config_file.set_boolean("advanced", "show_highlight_frame", false);
                 config_file.set_boolean("advanced", "copy_on_select", false);
 
@@ -302,17 +309,19 @@ namespace Config {
             check_string("shortcut", "jump_to_previous_command", "Shift + Up");
             check_string("shortcut", "select_all", "Ctrl + Shift + a");
 
-            check_string("shortcut", "new_workspace", "Ctrl + Shift + t");
+            check_string("shortcut", "new_workspace", "Ctrl + t");
             check_string("shortcut", "close_workspace", "Ctrl + Shift + w");
             check_string("shortcut", "next_workspace", "Ctrl + Tab");
             check_string("shortcut", "previous_workspace", "Ctrl + Shift + Tab");
-            check_string("shortcut", "vertical_split", "Ctrl + Shift + j");
-            check_string("shortcut", "horizontal_split", "Ctrl + Shift + h");
-            check_string("shortcut", "select_upper_window", "Alt + k");
-            check_string("shortcut", "select_lower_window", "Alt + j");
-            check_string("shortcut", "select_left_window", "Alt + h");
-            check_string("shortcut", "select_right_window", "Alt + l");
-            check_string("shortcut", "close_window", "Ctrl + Alt + q");
+            check_string("shortcut", "vertical_split", "Alt + j");
+            check_string("shortcut", "horizontal_split", "Alt + h");
+
+            check_string("shortcut", "resize_workspace_up", "Ctrl + Alt + Up");
+            check_string("shortcut", "resize_workspace_down", "Ctrl + Alt + Down");
+            check_string("shortcut", "resize_workspace_left", "Ctrl + Alt + Left");
+            check_string("shortcut", "resize_workspace_right", "Ctrl + Alt + Right");
+
+            check_string("shortcut", "close_window", "Alt + q");
             check_string("shortcut", "close_other_windows", "Ctrl + Shift + q");
 
             check_string("shortcut", "rename_title", "F2");
@@ -343,6 +352,7 @@ namespace Config {
             check_boolean("advanced", "hide_quakewindow_when_active", true);
             check_boolean("advanced", "print_notify_after_script_finish", true);
             check_boolean("advanced", "run_as_login_shell", false);
+            check_boolean("advanced", "tabbar_at_the_bottom", true); 
             check_boolean("advanced", "show_highlight_frame", false);
             check_boolean("advanced", "copy_on_select", false);
 
@@ -424,7 +434,7 @@ namespace Config {
 
                 config_file.set_string("general", "theme", theme_name);
             } catch (Error e) {
-                print("Config update_theme: %s\n", e.message);
+                print("Config update_theme: %s\n", Utils.get_theme_path(theme_name));
             }
         }
 

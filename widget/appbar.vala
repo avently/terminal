@@ -159,13 +159,7 @@ namespace Widgets {
                 });
 
             Box box = new Box(Gtk.Orientation.HORIZONTAL, 0);
-
-            var logo_box = new Box(Gtk.Orientation.VERTICAL, 0);
-            logo_box.set_size_request(logo_width, Constant.TITLEBAR_HEIGHT);
-            Gtk.Image logo_image = new Gtk.Image.from_file(Utils.get_image_path("title_icon.svg"));
-            logo_box.pack_start(logo_image, true, true, 0);
-            box.pack_start(logo_box, false, false, 0);
-
+            
             max_toggle_box.add(max_button);
 
             box.pack_start(tabbar, true, true, 0);
